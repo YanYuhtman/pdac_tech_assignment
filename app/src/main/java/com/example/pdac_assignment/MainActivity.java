@@ -13,7 +13,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.pdac_assignment.Utils.Histogram;
+import com.example.pdac_assignment.Utils.HistogramFactory;
 import com.example.pdac_assignment.Utils.Utils;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -89,15 +89,15 @@ public class MainActivity extends AppCompatActivity implements Camera.PreviewCal
 
                     while ((content = mImageDataBlockingArray.take()) != null) {
                         byte[] bytes = Utils.convertYuvToJpeg(content.bytes, content.previewFormat, content.width, content.height);
-                        final Histogram histogram = Histogram.instantiateHistogram(bytes, 0, bytes.length, new Histogram.Config(200, 512));
+                        final HistogramFactory histogram = HistogramFactory.instantiateHistogram(bytes, 0, bytes.length);
                         histogram.getSortedColors();
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                Histogram.Color[] colors = histogram.getSortedColors();
+                                HistogramFactory.Color[] colors = histogram.getSortedColors();
                                 StringBuilder stringBuilder = new StringBuilder();
                                 for(int i = 0; i < 5; i++){
-                                    stringBuilder.append(String.format("%.2f",(colors[i].getCount()/(float) histogram.getItemCount())*100))
+                                    stringBuilder.append(String.format("%.2f",(histogram.getColorShare(colors[i]))))
                                             .append("% ")
                                             .append(colors[i].toString())
                                             .append("\n");
