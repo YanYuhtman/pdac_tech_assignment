@@ -114,7 +114,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         }
     }
     private Camera.Parameters setClosestRatio(Camera.Parameters params, int width,int height){
-        if(orientation % 90 == 0) {
+        if(orientation == Surface.ROTATION_0 || orientation == Surface.ROTATION_180) {
             int tmpHeight = height;
             height = width;
             width = tmpHeight;
