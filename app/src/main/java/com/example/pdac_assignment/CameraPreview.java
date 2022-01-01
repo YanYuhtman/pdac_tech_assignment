@@ -10,6 +10,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import java.io.IOException;
+import java.util.List;
 
 /** A basic Camera preview class */
 @SuppressWarnings( "deprecation" )
@@ -17,10 +18,14 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private static final String TAG = "CameraPreview";
     private SurfaceHolder mHolder;
     private Camera mCamera;
+    private int orientation = 0;
+
 
     public CameraPreview(Context context, Camera camera) {
         super(context);
         mCamera = camera;
+        orientation = ((Activity)context).getWindowManager().getDefaultDisplay()
+                .getRotation();
         //fix camera orientation
         setCameraDisplayOrientation((Activity) context, 0, camera);
 
@@ -97,11 +102,35 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
         // start preview with new settings
         try {
+            Camera.Parameters params = setClosestRatio(mCamera.getParameters(),w,h) ;
+            mCamera.setParameters(params);
             mCamera.setPreviewDisplay(mHolder);
             mCamera.startPreview();
+            if(getContext() instanceof Camera.PreviewCallback)
+                mCamera.setPreviewCallback((Camera.PreviewCallback)getContext());
 
         } catch (Exception e){
             Log.d(TAG, "Error starting camera preview: " + e.getMessage());
         }
+    }
+    private Camera.Parameters setClosestRatio(Camera.Parameters params, int width,int height){
+        if(orientation % 90 == 0) {
+            int tmpHeight = height;
+            height = width;
+            width = tmpHeight;
+        }
+
+        List<Camera.Size> sizes = params.getSupportedPreviewSizes();
+        float closestRatio = Math.abs(sizes.get(0).width /(float)sizes.get(0).height - width/(float)height);
+        params.setPreviewSize(sizes.get(0).width,sizes.get(0).height);
+        for(Camera.Size size : sizes) {
+            float tmpRatio = Math.abs(size.width / (float) size.height - width / (float) height);
+            if (closestRatio > tmpRatio) {
+                closestRatio = tmpRatio;
+                params.setPreviewSize(size.width,size.height);
+            }
+        }
+        return params;
+
     }
 }
