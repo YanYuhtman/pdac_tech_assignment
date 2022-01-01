@@ -173,13 +173,20 @@ public class MainActivity extends AppCompatActivity implements Camera.PreviewCal
     @Override
     protected void onStop() {
         super.onStop();
-        mCameraContainer.removeAllViews();
-        if(mCamera != null)
-            mCamera.release();
         mExecutor.shutdown();
+        mCameraContainer.removeAllViews();
+        releaseCamera();
+
 
     }
-
+    private void releaseCamera(){
+        if(mCamera != null) {
+            mCamera.setPreviewCallback(null);
+            mCamera.stopPreview();
+            mCamera.release();
+            mCamera = null;
+        }
+    }
 
 
     private void showCriticalDialogMessage(String message){
