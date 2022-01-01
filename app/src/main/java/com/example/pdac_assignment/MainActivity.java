@@ -1,21 +1,29 @@
 package com.example.pdac_assignment;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.graphics.ColorUtils;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.RectShape;
 import android.hardware.Camera;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.pdac_assignment.Utils.HistogramFactory;
+import com.example.pdac_assignment.Utils.Histogram;
 import com.example.pdac_assignment.Utils.Utils;
 
+import java.util.Locale;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,8 +36,46 @@ public class MainActivity extends AppCompatActivity implements Camera.PreviewCal
     private Camera mCamera = null;
     private FrameLayout mCameraContainer = null;
     private ImageView mChekcImage = null;
-    private TextView mCheckTextView = null;
+    private ColorBoxViewHolder [] mColorHolders = new ColorBoxViewHolder[5];
     private final static int REQUEST_PERMISSION = 100;
+
+    private static class ColorBoxViewHolder{
+
+        View colorBox = null;
+        TextView tv_percent = null;
+        TextView tv_colorstring = null;
+        static final String DEFAULT_PERCENT = "0.0%";
+        static final String DEFAULT_COLOR = "R: B: G:";
+
+        ColorBoxViewHolder(@NonNull View view ) {
+            colorBox = view.findViewById(R.id.color_component_colorbox);
+            tv_percent = view.findViewById(R.id.color_component_tv_percent);
+            tv_colorstring = view.findViewById(R.id.color_component_tv_colorstring);
+            setDefaults();
+        }
+        void setDefaults(){
+            ((GradientDrawable)colorBox.getBackground()).setColor(0x00000000);
+            tv_percent.setText(DEFAULT_PERCENT);
+            tv_percent.setTextColor(Color.WHITE);
+            tv_colorstring.setText(DEFAULT_COLOR);
+        }
+        int calculateTextColor(int bgColor){
+            return ((bgColor & 0xff0000) >> 24 < 0x7f
+                            && (bgColor & 0x00ff00) >> 16 < 0x7f
+                                 && (bgColor & 0x0000ff)  < 0x7f) ? Color.WHITE
+                    : Color.BLACK;
+        }
+        void populateWith(Histogram.Color color, float rate){
+            if(color != null){
+                ((GradientDrawable)colorBox.getBackground()).setColor(color.color);
+                tv_percent.setText(String.format(Locale.getDefault(),"%.2f%%",(rate)));
+                tv_percent.setTextColor(calculateTextColor(color.color));
+                tv_colorstring.setText(color.toString());
+            }else
+                setDefaults();
+        }
+    }
+
 
     private ArrayBlockingQueue<ExecutionContent> mImageDataBlockingArray = new ArrayBlockingQueue<ExecutionContent>(1);
     private ExecutorService mExecutor = null;
@@ -54,7 +100,11 @@ public class MainActivity extends AppCompatActivity implements Camera.PreviewCal
         setContentView(R.layout.activity_main);
         mCameraContainer =  findViewById(R.id.main_camera_preview);
         mChekcImage = findViewById(R.id.main_image_check);
-        mCheckTextView = findViewById(R.id.main_text_view);
+        mColorHolders[0] = new ColorBoxViewHolder(findViewById(R.id.main_camera_colorbox_0));
+        mColorHolders[1] = new ColorBoxViewHolder(findViewById(R.id.main_camera_colorbox_1));
+        mColorHolders[2] = new ColorBoxViewHolder(findViewById(R.id.main_camera_colorbox_2));
+        mColorHolders[3] = new ColorBoxViewHolder(findViewById(R.id.main_camera_colorbox_3));
+        mColorHolders[4] = new ColorBoxViewHolder(findViewById(R.id.main_camera_colorbox_4));
 
         if(!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
             showCriticalDialogMessage("Camera hardware features is not present");
@@ -89,21 +139,14 @@ public class MainActivity extends AppCompatActivity implements Camera.PreviewCal
 
                     while ((content = mImageDataBlockingArray.take()) != null) {
                         byte[] bytes = Utils.convertYuvToJpeg(content.bytes, content.previewFormat, content.width, content.height);
-                        final HistogramFactory histogram = HistogramFactory.instantiateHistogram(bytes, 0, bytes.length);
+                        final Histogram histogram = Histogram.instantiateHistogram(bytes, 0, bytes.length);
                         histogram.getSortedColors();
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                HistogramFactory.Color[] colors = histogram.getSortedColors();
-                                StringBuilder stringBuilder = new StringBuilder();
-                                for(int i = 0; i < 5; i++){
-                                    stringBuilder.append(String.format("%.2f",(histogram.getColorShare(colors[i]))))
-                                            .append("% ")
-                                            .append(colors[i].toString())
-                                            .append("\n");
-                                }
-                                mCheckTextView.setText(stringBuilder.toString());
-
+                                Histogram.Color[] colors = histogram.getSortedColors();
+                                for(int i = 0; i < mColorHolders.length; i++)
+                                    mColorHolders[i].populateWith(colors[i],histogram.getColorShare(colors[i]));
                             }
                         });
                     }

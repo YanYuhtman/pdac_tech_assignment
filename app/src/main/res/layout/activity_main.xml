@@ -3,17 +3,53 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
-    tools:context=".MainActivity">
-
-
+    tools:context=".MainActivity"
+    android:background="@color/black"
+    >
     <TextView
-        android:id="@+id/main_text_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
+        android:gravity="center_horizontal"
+        android:text="@string/main_colorbox_title"
+        android:textStyle="bold"
+        android:textSize="12sp"
         />
+
+    <TableLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:shrinkColumns="*"
+        android:stretchColumns="*"
+        android:padding="10dp"
+
+        >
+
+        <TableRow>
+            <include
+                android:id="@+id/main_camera_colorbox_0"
+                layout="@layout/color_component" />
+
+            <include
+                android:id="@+id/main_camera_colorbox_1"
+                layout="@layout/color_component" />
+
+            <include
+                android:id="@+id/main_camera_colorbox_2"
+                layout="@layout/color_component" />
+
+            <include
+                android:id="@+id/main_camera_colorbox_3"
+                layout="@layout/color_component" />
+
+            <include
+                android:id="@+id/main_camera_colorbox_4"
+                layout="@layout/color_component" />
+        </TableRow>
+
+
+    </TableLayout>
     <FrameLayout
         android:id="@+id/main_camera_preview"
         android:layout_width="match_parent"

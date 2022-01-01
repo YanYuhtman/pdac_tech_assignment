@@ -10,7 +10,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.*;
 
-import com.example.pdac_assignment.Utils.HistogramFactory;
+import com.example.pdac_assignment.Utils.Histogram;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -32,8 +32,8 @@ public class ExampleInstrumentedTest {
     @Test
     public void testHistogram_SolidColor() throws IOException {
         Context appContext = InstrumentationRegistry.getInstrumentation().getContext();
-        HistogramFactory p = HistogramFactory.instantiateHistogram(appContext.getAssets().open("test_solid_color.jpg")
-                , new HistogramFactory.ConfigBuilder()
+        Histogram p = Histogram.instantiateHistogram(appContext.getAssets().open("test_solid_color.jpg")
+                , new Histogram.ConfigBuilder()
                         .setMaxBoundary(128)
                 .build()
         );
@@ -57,16 +57,16 @@ public class ExampleInstrumentedTest {
     }
     public void testHistogram_accuracy(String fileName) throws IOException {
         Context appContext = InstrumentationRegistry.getInstrumentation().getContext();
-        HistogramFactory p = HistogramFactory.instantiateHistogram(appContext.getAssets().open(fileName)
-                ,new HistogramFactory.ConfigBuilder()
+        Histogram p = Histogram.instantiateHistogram(appContext.getAssets().open(fileName)
+                ,new Histogram.ConfigBuilder()
                     .setScaleBy(1)
                 .build()
         );
-        HistogramFactory p2 = HistogramFactory.instantiateHistogram(appContext.getAssets().open(fileName)
-                ,new HistogramFactory.ConfigBuilder()
+        Histogram p2 = Histogram.instantiateHistogram(appContext.getAssets().open(fileName)
+                ,new Histogram.ConfigBuilder()
                         .setScaleBy(4)
                         .build());
-        HashSet<HistogramFactory.Color> hashSet = new HashSet<>();
+        HashSet<Histogram.Color> hashSet = new HashSet<>();
         for(int i = 0; i < 6; i++)
             hashSet.add(p.getSortedColors()[i]);
         for(int i = 0; i < 5; i++)

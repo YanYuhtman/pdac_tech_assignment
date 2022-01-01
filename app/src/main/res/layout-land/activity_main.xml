@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -7,26 +7,79 @@
     android:orientation="horizontal"
     tools:context=".MainActivity">
 
-
-    <TextView
-        android:id="@+id/main_text_view"
+    <TableLayout
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:gravity="center"
-        />
+        android:layout_alignParentRight="true"
+        android:padding="10dp"
+        android:shrinkColumns="*"
+        android:stretchColumns="*"
+        android:weightSum="6"
+
+        >
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:text="@string/main_colorbox_title"
+            android:textStyle="bold"
+            android:textSize="12sp"
+            android:layout_weight="0.4"
+            />
+
+
+        <include
+            android:layout_weight="1"
+            android:layout_height="0dp"
+            android:layout_width="wrap_content"
+            android:id="@+id/main_camera_colorbox_0"
+            layout="@layout/color_component"
+            />
+
+        <include
+            android:layout_weight="1"
+            android:layout_height="0dp"
+            android:layout_width="wrap_content"
+
+            android:id="@+id/main_camera_colorbox_1"
+            layout="@layout/color_component" />
+
+        <include
+            android:layout_weight="1"
+            android:layout_height="0dp"
+            android:layout_width="wrap_content"
+            android:id="@+id/main_camera_colorbox_2"
+            layout="@layout/color_component" />
+
+        <include
+            android:layout_weight="1"
+            android:layout_height="0dp"
+            android:layout_width="wrap_content"
+            android:id="@+id/main_camera_colorbox_3"
+            layout="@layout/color_component" />
+
+        <include
+            android:layout_weight="1"
+            android:layout_height="0dp"
+            android:layout_width="wrap_content"
+            android:id="@+id/main_camera_colorbox_4"
+            layout="@layout/color_component" />
+
+
+    </TableLayout>
+
     <FrameLayout
         android:id="@+id/main_camera_preview"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        />
+        android:layout_height="match_parent" />
+
     <ImageView
         android:id="@+id/main_image_check"
-        android:visibility="gone"
         android:layout_width="320dp"
         android:layout_height="320dp"
         android:layout_alignParentLeft="true"
         android:layout_alignParentBottom="true"
-        android:padding="5dp"
         android:background="@color/black"
-        />
-</androidx.appcompat.widget.LinearLayoutCompat>
+        android:padding="5dp"
+        android:visibility="gone" />
+</RelativeLayout>

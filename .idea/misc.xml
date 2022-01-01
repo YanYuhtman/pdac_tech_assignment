@@ -3,8 +3,10 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/Kvant/AndroidStudioProjects/pdac_assignment/app/src/main/res/drawable/color_component_bg.xml" value="0.4453125" />
         <entry key="..\:/Users/Kvant/AndroidStudioProjects/pdac_assignment/app/src/main/res/layout-land/activity_main.xml" value="0.24114583333333334" />
-        <entry key="..\:/Users/Kvant/AndroidStudioProjects/pdac_assignment/app/src/main/res/layout/activity_main.xml" value="0.26614583333333336" />
+        <entry key="..\:/Users/Kvant/AndroidStudioProjects/pdac_assignment/app/src/main/res/layout/activity_main.xml" value="0.33" />
+        <entry key="..\:/Users/Kvant/AndroidStudioProjects/pdac_assignment/app/src/main/res/layout/color_component.xml" value="1.0" />
         <entry key="..\:/Users/Kvant/AndroidStudioProjects/pdac_assignment/app/src/main/res/layout/fragment_camera_image_analysis.xml" value="0.23333333333333334" />
       </map>
     </option>

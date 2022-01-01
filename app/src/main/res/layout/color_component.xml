@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+   >
+
+
+    <RelativeLayout
+        android:id="@+id/color_component_colorbox"
+        android:layout_width="52dp"
+        android:layout_height="32dp"
+        android:background="@drawable/color_component_bg"
+        android:layout_margin="3dp"
+        app:layout_constraintBottom_toTopOf="@+id/color_component_tv_colorstring"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent" >
+
+        <TextView
+            android:id="@+id/color_component_tv_percent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="8.22%"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            />
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/color_component_tv_colorstring"
+        android:layout_width="86dp"
+        android:gravity="center_horizontal"
+        android:layout_height="wrap_content"
+        android:text="R:255 B:255 C:255"
+        android:ellipsize="end"
+        android:textStyle="bold"
+        android:textColor="@color/white"
+        android:textSize="9sp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

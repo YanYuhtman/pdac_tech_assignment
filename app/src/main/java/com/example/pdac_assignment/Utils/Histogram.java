@@ -13,7 +13,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Objects;
 
-public class HistogramFactory {
+public class Histogram {
     public static final int DEFAULT_SCALING_FACTOR = 4;
 
     private static class Config{
@@ -84,14 +84,14 @@ public class HistogramFactory {
             return Objects.hashCode(this.color);
         }
     }
-    private HistogramFactory(){
+    private Histogram(){
     }
 
-    private HistogramFactory(Color[] colors, int itemsCount){
+    private Histogram(Color[] colors, int itemsCount){
         mPaletteColors = colors;
         mItemsCount = itemsCount;
     }
-    private HistogramFactory(HashMap<Integer,Integer> map, int itemsCount){
+    private Histogram(HashMap<Integer,Integer> map, int itemsCount){
         mColorMap = map;
         mItemsCount = itemsCount;
 
@@ -122,10 +122,10 @@ public class HistogramFactory {
     }
 
 
-    public static HistogramFactory instantiateHistogram(byte[] bytes, int offset, int length){
+    public static Histogram instantiateHistogram(byte[] bytes, int offset, int length){
        return instantiateHistogram(bytes, offset, length,null);
     }
-    public static HistogramFactory instantiateHistogram(byte[] bytes, int offset, int length, Config config) throws IllegalArgumentException{
+    public static Histogram instantiateHistogram(byte[] bytes, int offset, int length, Config config) throws IllegalArgumentException{
         if(config == null)
             config = new Config();
         Bitmap bitmap = null;
@@ -134,14 +134,14 @@ public class HistogramFactory {
         }catch (Exception e){
             throw new IllegalArgumentException("Unable to decode bytes", e);
         }
-        HistogramFactory histogram = new HistogramFactory(prepareColorsFromHistogramBitmap(bitmap),bitmap.getHeight() * bitmap.getWidth());
+        Histogram histogram = new Histogram(prepareColorsFromHistogramBitmap(bitmap),bitmap.getHeight() * bitmap.getWidth());
         bitmap.recycle();
         return histogram;
     }
-    public static HistogramFactory instantiateHistogram(InputStream is){
+    public static Histogram instantiateHistogram(InputStream is){
        return instantiateHistogram(is,null);
     }
-    public static HistogramFactory instantiateHistogram(InputStream is, Config config) throws IllegalArgumentException{
+    public static Histogram instantiateHistogram(InputStream is, Config config) throws IllegalArgumentException{
         if(config == null)
             config = new Config();
         Bitmap bitmap = null;
@@ -150,7 +150,7 @@ public class HistogramFactory {
         }catch (Exception e){
             throw new IllegalArgumentException("Unable to decode stream", e);
         }
-        HistogramFactory histogram = new HistogramFactory(prepareColorsFromHistogramBitmap(bitmap),bitmap.getHeight() * bitmap.getWidth());
+        Histogram histogram = new Histogram(prepareColorsFromHistogramBitmap(bitmap),bitmap.getHeight() * bitmap.getWidth());
         bitmap.recycle();
         return histogram;
     }
