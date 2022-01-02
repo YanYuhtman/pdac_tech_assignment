@@ -9,15 +9,7 @@ import androidx.lifecycle.MutableLiveData;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.ImageFormat;
-import android.graphics.Paint;
-import android.graphics.drawable.AdaptiveIconDrawable;
-import android.graphics.drawable.BitmapDrawable;
-import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -28,17 +20,12 @@ import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
-import android.hardware.camera2.params.OutputConfiguration;
-import android.hardware.camera2.params.SessionConfiguration;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.Message;
-import android.os.SystemClock;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
@@ -48,14 +35,10 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import com.example.pdac_assignment.Utils.Histogram;
-import com.example.pdac_assignment.Utils.Utils;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -80,7 +63,14 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
     //region SurfaceView
     private SurfaceHolder mSurfaceHolder = null;
 
-
+    private HandlerThread mCameraSessionHandlerThread = new HandlerThread("SessionHandlerThread") {
+        @Override
+        protected void onLooperPrepared() {
+            super.onLooperPrepared();
+            mCameraSessionHandler = new Handler(getLooper());
+        }
+    };
+    private Handler mCameraSessionHandler = null;
 
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
@@ -161,6 +151,8 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
     protected void onStart() {
         super.onStart();
 
+        mCameraSessionHandlerThread.start();
+
         mExecutor = Executors.newSingleThreadExecutor();
         mExecutor.execute(new Runnable() {
             @Override
@@ -189,6 +181,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
     @Override
     protected void onStop() {
         super.onStop();
+        mCameraSessionHandlerThread.quitSafely();
         mExecutor.shutdown();
         closeCamera();
     }
@@ -337,7 +330,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
                 public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
                     Log.e(TAG,"Unable to create capture session "+ cameraCaptureSession);
                 }
-            },null);
+            },mCameraSessionHandler);
 
         } catch (Exception e) {
            Log.e(TAG,"Unable to access camera device",e);
