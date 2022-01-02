@@ -4,33 +4,26 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import com.example.pdac_assignment.Utils.Histogram;
 import com.example.pdac_assignment.Utils.Utils;
 
-import java.util.Locale;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
 @SuppressWarnings("deprecation")
-public class MainActivity extends AppCompatActivity implements Camera.PreviewCallback{
+public class CameraActivity extends AppCompatActivity implements Camera.PreviewCallback{
 
     private static final String TAG = "MainActivity";
     private CameraPreview mCameraPreview = null;
@@ -42,60 +35,10 @@ public class MainActivity extends AppCompatActivity implements Camera.PreviewCal
 
     final MutableLiveData<Histogram> mExecutionData = new MutableLiveData<>();
 
-    private static class ColorBoxViewHolder{
-
-        View colorBox = null;
-        TextView tv_percent = null;
-        TextView tv_colorstring = null;
-        static final String DEFAULT_PERCENT = "0.0%";
-        static final String DEFAULT_COLOR = "R: B: G:";
-
-        ColorBoxViewHolder(@NonNull View view ) {
-            colorBox = view.findViewById(R.id.color_component_colorbox);
-            tv_percent = view.findViewById(R.id.color_component_tv_percent);
-            tv_colorstring = view.findViewById(R.id.color_component_tv_colorstring);
-            setDefaults();
-        }
-        void setDefaults(){
-            ((GradientDrawable)colorBox.getBackground()).setColor(0x00000000);
-            tv_percent.setText(DEFAULT_PERCENT);
-            tv_percent.setTextColor(Color.WHITE);
-            tv_colorstring.setText(DEFAULT_COLOR);
-        }
-        int calculateTextColor(int bgColor){
-            return ((bgColor & 0xff0000) >> 24 < 0x7f
-                            && (bgColor & 0x00ff00) >> 16 < 0x7f
-                                 && (bgColor & 0x0000ff)  < 0x7f) ? Color.WHITE
-                    : Color.BLACK;
-        }
-        void populateWith(Histogram.Color color, float rate){
-            if(color != null){
-                ((GradientDrawable)colorBox.getBackground()).setColor(color.color);
-                tv_percent.setText(String.format(Locale.getDefault(),"%.2f%%",(rate)));
-                tv_percent.setTextColor(calculateTextColor(color.color));
-                tv_colorstring.setText(color.toString());
-            }else
-                setDefaults();
-        }
-    }
-
 
     private ArrayBlockingQueue<ExecutionContent> mImageDataBlockingArray = new ArrayBlockingQueue<ExecutionContent>(1);
     private ExecutorService mExecutor = null;
     private final int INITIAL_SCALING_BY = 64;
-    private class ExecutionContent{
-        final int previewFormat;
-        final int width;
-        final int height;
-        final byte[] bytes;
-
-        public ExecutionContent(int previewFormat, int width, int height, byte[] bytes) {
-            this.previewFormat = previewFormat;
-            this.width = width;
-            this.height = height;
-            this.bytes = bytes;
-        }
-    }
 
 
     @Override
@@ -127,7 +70,6 @@ public class MainActivity extends AppCompatActivity implements Camera.PreviewCal
 
             Camera.Size size = mCamera.getParameters().getSupportedPreviewSizes().get(0);
             Camera.Parameters params = mCamera.getParameters();
-//            params.setPreviewSize(size.width,size.height);
             if(params.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO))
                 params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
             mCamera.setParameters(params);
@@ -161,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements Camera.PreviewCal
                     }
 
                 } catch (InterruptedException e) {
-                    Log.d(TAG,"Executing interuppted",e);
+                    Log.d(TAG,"Executing interrupted",e);
                     e.printStackTrace();
                 }
             }
@@ -175,17 +117,10 @@ public class MainActivity extends AppCompatActivity implements Camera.PreviewCal
     }
 
     @Override
-    protected void onPostResume() {
-        super.onPostResume();
-
-    }
-
-
-    @Override
     protected void onStart() {
         super.onStart();
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA}, REQUEST_PERMISSION);
+            ActivityCompat.requestPermissions(CameraActivity.this, new String[]{Manifest.permission.CAMERA}, REQUEST_PERMISSION);
         }else{
             prepareCameraPreview();
         }
