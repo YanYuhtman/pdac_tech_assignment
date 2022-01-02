@@ -222,7 +222,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
 
                             byte[] bytes = new byte[buffer.capacity()];
                             buffer.get(bytes);
-
+                            mImageDataBlockingArray.clear();
                             mImageDataBlockingArray.put(new ExecutionContent(image.getFormat(), image.getWidth(), image.getHeight(), bytes));
 //                Bitmap bitmap = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
 
