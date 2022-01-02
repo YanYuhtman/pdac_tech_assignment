@@ -87,7 +87,6 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
 
        Log.i(TAG, "Surface created");
        createPreviewSession(surfaceHolder.getSurface(),mImageReader.getSurface());
-//       createImageReaderSession(mImageReader.getSurface());
 
     }
 
@@ -95,7 +94,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
     public void surfaceChanged(@NonNull SurfaceHolder surfaceHolder, int format, int w, int h) {
         Log.i(TAG, "Surface changed");
         Size size = findClosestRatio(supportedSizes,w,h);
-        surfaceHolder.setFixedSize(size.getWidth(), size.getHeight());
+        surfaceHolder.setFixedSize(size.getWidth(), h /*to take full screen*/);
 
     }
     private Size findClosestRatio(Size[] sizes, int width, int height){
@@ -107,6 +106,8 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
         float ratio = width > height ? width / (float) height : height / (float) width;
 
         for(Size size : sizes) {
+            if(size.getWidth() * size.getHeight() > width * height)
+                continue;
             float tmpRatio = size.getWidth() / (float) size.getHeight();
             if (Math.abs(tmpRatio - ratio) < Math.abs(targetRatio - ratio)){
                 targetRatio = tmpRatio;
@@ -119,9 +120,6 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
         Log.i(TAG, "Surface destroyed");
-
-
-
     }
 
     //endregion
@@ -132,6 +130,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
 
     private CameraDevice mCameraDevice;
 
+    private final static int MAX_IMAGE_SIZE_BOUNDARY = 1920;
     private ImageReader mImageReader;
 
     @Override
@@ -191,6 +190,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
     protected void onStop() {
         super.onStop();
         mExecutor.shutdown();
+        closeCamera();
     }
     private void acquireCameraCharacteristics(@NonNull CameraManager cm){
         try {
@@ -204,41 +204,49 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
             Log.e(TAG, "Unable to access camera", e);
         }
     }
-    private void createImageReader(){
-        if(supportedSizes == null)
-            throw new RuntimeException("Supported sizes must be acquired");
-        Size size = supportedSizes[0];
-        for(Size s : supportedSizes){
-            if(s.getHeight()*s.getWidth() < size.getWidth() * size.getHeight())
+    private void createImageReader() {
+
+        try {
+            CameraManager cm = (CameraManager) getBaseContext().getSystemService(CAMERA_SERVICE);
+            CameraCharacteristics characteristics = cm.getCameraCharacteristics(mCameraId);
+            Size[] sizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
+
+            Size size = new Size(MAX_IMAGE_SIZE_BOUNDARY, MAX_IMAGE_SIZE_BOUNDARY);
+            for (Size s : sizes) {
+                if (s.getHeight() > MAX_IMAGE_SIZE_BOUNDARY || s.getWidth() > MAX_IMAGE_SIZE_BOUNDARY)
+                    continue;
                 size = s;
+                break;
+            }
+            mImageReader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.JPEG, 2);
+            mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+                @Override
+                public void onImageAvailable(ImageReader imageReader) {
+                    try {
+                        Image image = imageReader.acquireLatestImage();
+                        if (image != null) {
+                            ByteBuffer buffer = image.getPlanes()[0].getBuffer();
 
-        }
-        mImageReader = ImageReader.newInstance(size.getWidth(),size.getHeight(), ImageFormat.JPEG,5);
-        mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
-            @Override
-            public void onImageAvailable(ImageReader imageReader) {
-                try {
-                    Image image = imageReader.acquireLatestImage();
-                    if(image != null) {
-                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                            byte[] bytes = new byte[buffer.capacity()];
+                            buffer.get(bytes);
 
-                        byte[] bytes = new byte[buffer.capacity()];
-                        buffer.get(bytes);
-
-                        mImageDataBlockingArray.put(new ExecutionContent(image.getFormat(),image.getWidth(),image.getHeight(),bytes));
+                            mImageDataBlockingArray.put(new ExecutionContent(image.getFormat(), image.getWidth(), image.getHeight(), bytes));
 //                Bitmap bitmap = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
 
 //                mCheckImage.setImageBitmap(bitmap);
 //                Histogram histogram = Histogram.instantiateHistogram(bytes,0,bytes.length);
-                        image.close();
+                            image.close();
 
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Image reading exception", e);
                     }
-                }catch (Exception e){
-                    Log.e(TAG,"Image reading exception",e);
-                }
 
-            }
-        },null);
+                }
+            }, null);
+        }catch (CameraAccessException e){
+            Log.e(TAG,"Unable to create Image reader ",e);
+        }
     }
     private void openCamera() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -333,61 +341,6 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
 
         } catch (Exception e) {
            Log.e(TAG,"Unable to access camera device",e);
-        }
-    }
-    private void createImageReaderSession(Surface surface){
-        try {
-            CameraManager cm = (CameraManager) getApplicationContext().getSystemService(Context.CAMERA_SERVICE);
-            CameraCharacteristics ch = cm.getCameraCharacteristics(mCameraId);
-            Size[] sizes = ch.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
-            mImageReader = ImageReader.newInstance(sizes[0].getWidth(),sizes[0].getHeight(),ImageFormat.JPEG,1);
-
-            mCameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
-                @Override
-                public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
-                    mCaptureSession = cameraCaptureSession;
-                    try {
-                        CaptureRequest.Builder builder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
-//                        for(Surface s : surfaces)
-                        builder.addTarget(surface);
-//                        builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-
-
-                        cameraCaptureSession.setRepeatingRequest(builder.build(), new CameraCaptureSession.CaptureCallback() {
-                            @Override
-                            public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
-                                super.onCaptureStarted(session, request, timestamp, frameNumber);
-                            }
-
-                            @Override
-                            public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureResult partialResult) {
-                                super.onCaptureProgressed(session, request, partialResult);
-                            }
-
-                            @Override
-                            public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
-                                super.onCaptureCompleted(session, request, result);
-                            }
-
-                            @Override
-                            public void onCaptureFailed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureFailure failure) {
-                                super.onCaptureFailed(session, request, failure);
-                            }
-                        }, null);
-                    } catch (CameraAccessException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-
-                @Override
-                public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-                    Log.e(TAG,"Unable Image reader session "+ cameraCaptureSession);
-                }
-            },null);
-
-        } catch (Exception e) {
-            Log.e(TAG,"Unable to access camera device",e);
         }
     }
     @Override

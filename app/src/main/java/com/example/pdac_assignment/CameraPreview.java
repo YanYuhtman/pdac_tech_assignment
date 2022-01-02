@@ -121,9 +121,11 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         }
 
         List<Camera.Size> sizes = params.getSupportedPreviewSizes();
-        float closestRatio = Math.abs(sizes.get(0).width /(float)sizes.get(0).height - width/(float)height);
-        params.setPreviewSize(sizes.get(0).width,sizes.get(0).height);
+        float closestRatio = Float.MAX_VALUE;
         for(Camera.Size size : sizes) {
+            if(size.width * size.height > width*height) {
+                continue;
+            }
             float tmpRatio = Math.abs(size.width / (float) size.height - width / (float) height);
             if (closestRatio > tmpRatio) {
                 closestRatio = tmpRatio;
