@@ -13,9 +13,14 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Objects;
 
+/**
+ * Histogram factory class is responsible for popular colors evaluation
+ */
 public class Histogram {
+    //Default scaling factor is empirically discovered (see androidTest)
     public static final int DEFAULT_SCALING_FACTOR = 4;
 
+    //Config is a helper class for setting scaling factor or boundary size for image resizing
     private static class Config{
         public Integer max_boundary = null;
         public Integer scale_by = DEFAULT_SCALING_FACTOR;
@@ -24,6 +29,7 @@ public class Histogram {
             return scale_by != null;
         }
     }
+    //Builder helper class for setting Config params
     public static class ConfigBuilder{
         private Config config = new Config();
         public ConfigBuilder setMaxBoundary(int boundary){
@@ -46,6 +52,10 @@ public class Histogram {
         }
 
     }
+    /**
+     * Color class the resulting color item that involved in calculations
+     * it includes the amount of this color represented in image
+     */
     public static class Color{
         public final int color;
         private int mCount = 1;
@@ -88,22 +98,19 @@ public class Histogram {
     }
 
     private Histogram(Color[] colors, int itemsCount){
-        mPaletteColors = colors;
+        mColors = colors;
         mItemsCount = itemsCount;
     }
-    private Histogram(HashMap<Integer,Integer> map, int itemsCount){
-        mColorMap = map;
-        mItemsCount = itemsCount;
-
-    }
-    private Color[] mPaletteColors;
-    private HashMap<Integer,Integer> mColorMap;
+    
+    //Resulting array of total unique colors of image
+    private Color[] mColors;
     private boolean mSorted = false;
+    //Total pixels count in image
     private int mItemsCount = 0;
 
     public Color[] getSortedColors(){
         if(!mSorted){
-            Arrays.sort(mPaletteColors, new Comparator<Color>() {
+            Arrays.sort(mColors, new Comparator<Color>() {
                 @Override
                 public int compare(Color color, Color color2) {
                     return color2.mCount - color.mCount;
@@ -111,7 +118,7 @@ public class Histogram {
             });
             mSorted = true;
         }
-        return mPaletteColors;
+        return mColors;
     }
 
     public int getTotalColorsCount() {
@@ -121,10 +128,19 @@ public class Histogram {
         return (color.getCount()/(float) mItemsCount) * 100F;
     }
 
-
     public static Histogram instantiateHistogram(byte[] bytes, int offset, int length){
        return instantiateHistogram(bytes, offset, length,null);
     }
+
+    /**
+     * Factory function returns histogram of a byte array that includes bitmap
+     * @param bytes
+     * @param offset
+     * @param length
+     * @param config
+     * @return Histogram
+     * @throws IllegalArgumentException
+     */
     public static Histogram instantiateHistogram(byte[] bytes, int offset, int length, Config config) throws IllegalArgumentException{
         if(config == null)
             config = new Config();
@@ -141,6 +157,14 @@ public class Histogram {
     public static Histogram instantiateHistogram(InputStream is){
        return instantiateHistogram(is,null);
     }
+
+    /**
+     * Factory function returns histogram calculated from input stream bitmap
+     * @param is
+     * @param config
+     * @return
+     * @throws IllegalArgumentException
+     */
     public static Histogram instantiateHistogram(InputStream is, Config config) throws IllegalArgumentException{
         if(config == null)
             config = new Config();
@@ -154,19 +178,12 @@ public class Histogram {
         bitmap.recycle();
         return histogram;
     }
-    private static HashMap<Integer,Integer> prepareColorMapFromBitmap(@NonNull Bitmap bitmap){
-        HashMap<Integer,Integer> map = new HashMap<>();
-        for(int i = 0; i < bitmap.getWidth(); i++)
-            for(int j = 0; j < bitmap.getHeight(); j++) {
-                int pixel = bitmap.getPixel(i,j);
-                if (!map.containsKey(pixel))
-                    map.put(pixel,1);
-                else
-                    map.put(pixel,map.get(pixel) + 1);
 
-            }
-        return map;
-    }
+    /**
+     * Calculates the histogram map out of Bitmap object
+     * @param bitmap
+     * @return
+     */
     private static Color[] prepareColorsFromHistogramBitmap(@NonNull Bitmap bitmap){
         HashMap<Integer,Color> map = new HashMap<>();
         for(int i = 0; i < bitmap.getWidth(); i++)
@@ -180,6 +197,15 @@ public class Histogram {
        return map.values().toArray(new Color[map.size()]);
     }
 
+    /**
+     * Generates scaled bitmap out of byte array
+     * @param bytes
+     * @param offset
+     * @param length
+     * @param config
+     * @return
+     * @throws IllegalStateException
+     */
     private static Bitmap prepareHistogramBitmap(byte[] bytes, int offset, int length, Config config) throws IllegalStateException{
         BitmapFactory.Options options = prepareOptionsForSampling(config);
         if(!config.isPredefinedScaleBy()) {
@@ -192,6 +218,14 @@ public class Histogram {
         return bitmap;
 
     }
+
+    /**
+     * Generates scaled bitmap out of input stream
+     * @param is
+     * @param config
+     * @return
+     * @throws IOException
+     */
     private static Bitmap prepareHistogramBitmap(InputStream is, Config config) throws IOException {
         BitmapFactory.Options options = prepareOptionsForSampling(config);
         if(!config.isPredefinedScaleBy()) {
@@ -204,7 +238,7 @@ public class Histogram {
             throw new IOException("Unable to decode bitmap");
         return bitmap;
     }
-
+    // Helper function to resolve scaling factor upon boundary size
     private static BitmapFactory.Options prepareOptionsForSampling(Config config){
         BitmapFactory.Options options = new BitmapFactory.Options();
         if(config.max_boundary != null) {
@@ -214,10 +248,12 @@ public class Histogram {
             options.inSampleSize = config.scale_by;
         return options;
     }
+    // Helper function to prepare Bitmap.Options for bitmap generation
     private static void updateOptionsForDecoding(BitmapFactory.Options options, Config config){
         options.inJustDecodeBounds = false;
         options.inSampleSize = calcSampleSize(options,config);
     }
+    // Helper function to calculate sample size
     private static int calcSampleSize(BitmapFactory.Options options, Config config){
         int sampleSize = 1;
         while (options.outHeight / sampleSize > config.max_boundary || options.outWidth / sampleSize > config.max_boundary)

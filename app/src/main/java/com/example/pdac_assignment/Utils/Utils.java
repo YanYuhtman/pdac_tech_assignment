@@ -8,6 +8,14 @@ import java.util.Arrays;
 
 public final class Utils {
 
+    /**
+     * Helper function for Yuv -> RGB conversion
+     * @param data
+     * @param imageFormat
+     * @param width
+     * @param height
+     * @return
+     */
     public static byte[] convertYuvToJpeg(byte[] data, int imageFormat, int width, int height) {
 
         YuvImage image = new YuvImage(data, imageFormat, width, height, null);

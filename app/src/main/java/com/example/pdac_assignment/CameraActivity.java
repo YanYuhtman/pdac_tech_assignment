@@ -21,7 +21,11 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-
+/**
+ * This activity is responsible for camera preview and color set representation (using old API)
+ * At start i've implemented task using old API, than I thought that you would prefer to see new one.
+ * For the new camera API usage see Camera2 class
+ */
 @SuppressWarnings("deprecation")
 public class CameraActivity extends AppCompatActivity implements Camera.PreviewCallback{
 
@@ -30,16 +34,24 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
     private Camera mCamera = null;
     private FrameLayout mCameraContainer = null;
     private ImageView mCheckImage = null;
+
+    // Helper class array for color set representation
     private ColorBoxViewHolder [] mColorHolders = new ColorBoxViewHolder[5];
     private final static int REQUEST_PERMISSION = 100;
 
+
+    // Observable that holds processed data histogram collected for representation
     final MutableLiveData<Histogram> mExecutionData = new MutableLiveData<>();
 
 
+    // Blocking array of that holds an awaiting image data for further processing
     private ArrayBlockingQueue<ExecutionContent> mImageDataBlockingArray = new ArrayBlockingQueue<ExecutionContent>(1);
-    private ExecutorService mExecutor = null;
-    private final int INITIAL_SCALING_BY = 64;
 
+    // Executor, thread on which histogram calculations are done
+    private ExecutorService mExecutor = null;
+
+    // Initial image scaling value to give a better user experience
+    private final static int INITIAL_SCALING_BY = 64;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +72,11 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
         mExecutionData.observe(this, this::populateColorBoxes);
 
     }
+
+    /**
+     * Opens camera, adding camera CameraPreview surface view
+     * initializes executor and performs histogram calculations
+     */
     private void prepareCameraPreview(){
         try {
             mCamera = Camera.open();
@@ -75,8 +92,6 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
             mCamera.setParameters(params);
 
             mCamera.setPreviewCallback(this);
-            testPixelsBitmap = null;
-            amountsOfRGBs = null;
 
         }catch (Exception e){
             showCriticalDialogMessage(e.getMessage());
@@ -92,11 +107,13 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
                     int scaleBy = INITIAL_SCALING_BY;
                     while (true) {
                         ExecutionContent content = mImageDataBlockingArray.take();
+                        //The incoming image format NV21 set untouched because it supported on all platforms
                         byte[] bytes = Utils.convertYuvToJpeg(content.bytes, content.previewFormat, content.width, content.height);
                         final Histogram histogram = Histogram.instantiateHistogram(bytes, 0, bytes.length,
                                 new Histogram.ConfigBuilder()
                                         .setScaleBy(scaleBy)
                                         .build());
+                        //upscaling the factor to the default scaling setting with each cycle
                         if(scaleBy > Histogram.DEFAULT_SCALING_FACTOR)
                             scaleBy /=2;
                         mExecutionData.postValue(histogram);
@@ -104,12 +121,16 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
 
                 } catch (InterruptedException e) {
                     Log.d(TAG,"Executing interrupted",e);
-                    e.printStackTrace();
                 }
             }
         });
 
     }
+
+    /**
+     * Method which represents calculated histogram data
+     * @param histogram
+     */
     private void populateColorBoxes(Histogram histogram){
         Histogram.Color[] colors = histogram.getSortedColors();
         for(int i = 0; i < mColorHolders.length && i < colors.length; i++)
@@ -146,6 +167,10 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
     }
 
 
+    /**
+     * Represents global critical dialog message
+     * @param message
+     */
     private void showCriticalDialogMessage(String message){
         new AlertDialog.Builder(this)
                 .setTitle("Critical error")
@@ -169,15 +194,18 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
     }
 
 
-//    Test image conversion by YuvImage class
-    int []testPixelsBitmap = null;
-    float[] amountsOfRGBs = null;
-    private long executionTimeAvg = -1;
+    /**
+     * PreviewCallback interface implementation, the raw image camera income
+     * @param bytes
+     * @param camera
+     */
     @Override
     public void onPreviewFrame(byte[] bytes, Camera camera) {
 
         try {
+            //Dropping old frame if any
             mImageDataBlockingArray.clear();
+            //Adding new frame for the executor to process
             mImageDataBlockingArray.put(new ExecutionContent(camera.getParameters().getPreviewFormat()
                     ,camera.getParameters().getPreviewSize().width
                     ,camera.getParameters().getPreviewSize().height

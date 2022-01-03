@@ -11,7 +11,10 @@ import com.example.pdac_assignment.Utils.Histogram;
 
 import java.util.Locale;
 
-public class ColorBoxViewHolder{
+/**
+ * ViewHolder, helper class to represent color values
+ */
+class ColorBoxViewHolder{
 
     View colorBox = null;
     TextView tv_percent = null;

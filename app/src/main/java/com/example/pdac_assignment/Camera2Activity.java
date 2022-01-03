@@ -46,8 +46,10 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
     private static final String TAG = "Camera2Activity";
 
     private final  int REQUEST_PERMISSION = 100;
+    //Capture camera session reference
     CameraCaptureSession mCaptureSession = null;
 
+    //Check image used to test the received data from ImageReader
     private ImageView mCheckImage = null;
 
     private ColorBoxViewHolder [] mColorHolders = new ColorBoxViewHolder[5];

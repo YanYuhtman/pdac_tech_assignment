@@ -113,6 +113,14 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             Log.d(TAG, "Error starting camera preview: " + e.getMessage());
         }
     }
+
+    /**
+     * calculates the closest ratio and size for surface representation
+     * @param params
+     * @param width
+     * @param height
+     * @return
+     */
     private Camera.Parameters setClosestRatio(Camera.Parameters params, int width,int height){
         if(orientation == Surface.ROTATION_0 || orientation == Surface.ROTATION_180) {
             int tmpHeight = height;
