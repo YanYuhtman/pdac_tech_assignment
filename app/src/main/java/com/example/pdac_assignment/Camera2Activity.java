@@ -52,21 +52,28 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
     //Check image used to test the received data from ImageReader
     private ImageView mCheckImage = null;
 
+    // Helper class array for color set representation
     private ColorBoxViewHolder [] mColorHolders = new ColorBoxViewHolder[5];
+    // Observable that holds processed data histogram collected for representation
     final MutableLiveData<Histogram> mExecutionData = new MutableLiveData<>();
 
+    // Initial image scaling value to give a better user experience
     private final static int INITIAL_SCALING_BY = 4;
+    // Blocking array of that holds an awaiting image data for further processing
     private ArrayBlockingQueue<ExecutionContent> mImageDataBlockingArray = new ArrayBlockingQueue<ExecutionContent>(1);
     private ExecutorService mExecutor = null;
 
-
+    //Frame that holds the surface view
     private FrameLayout mSurfaceFrame = null;
+    // Surface that camera API draws on
     private SurfaceView mSurfaceView = null;
-    //region SurfaceView
-    private SurfaceHolder mSurfaceHolder = null;
 
+    // handler thread and a handler for reading image data
     private HandlerThread mCameraSessionHandlerThread = null;
     private Handler mCameraSessionHandler = null;
+
+    //region SurfaceView callbacks
+    private SurfaceHolder mSurfaceHolder = null;
 
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
@@ -110,13 +117,16 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
 
     //endregion
 
-
+    //Attached camera id
     private String mCameraId;
+    // Camera supported sizes
     private Size[] supportedSizes = null;
-
+    //Camera device reference
     private CameraDevice mCameraDevice;
 
+    //ImageReader size is adjusted to maximum size limit divided by scaling factor (see androidTest)
     private final static int MAX_IMAGE_SIZE_BOUNDARY = 1920/Histogram.DEFAULT_SCALING_FACTOR;
+    //The reader on which camera api draws to surface for further processing
     private ImageReader mImageReader;
 
     @Override
@@ -132,14 +142,13 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
         mColorHolders[3] = new ColorBoxViewHolder(findViewById(R.id.main_camera_colorbox_3));
         mColorHolders[4] = new ColorBoxViewHolder(findViewById(R.id.main_camera_colorbox_4));
 
-
+        //In case there is no camera feature available there is no reason for further processing
         if(!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
             showCriticalDialogMessage("Camera hardware features is not present");
             return;
         }
+        //observing execution data and populating the views
         mExecutionData.observe(this, this::populateColorBoxes);
-
-
 
     }
 
@@ -147,9 +156,12 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
     protected void onStart() {
         super.onStart();
 
+        //Camera session thread initialization
         (mCameraSessionHandlerThread = initializeCameraSessionHandlerThread()).start();
 
+        //Histogram calculation thread initialization
         mExecutor = Executors.newSingleThreadExecutor();
+        //Execution of histogram calculation thread
         mExecutor.execute(new Runnable() {
             @Override
             public void run() {
@@ -161,6 +173,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
                                 new Histogram.ConfigBuilder()
                                         .setScaleBy(scaleBy)
                                         .build());
+                        //upscaling the factor to 1 with each cycle
                         if(scaleBy > 1)
                             scaleBy /=2;
                         mExecutionData.postValue(histogram);
@@ -182,6 +195,11 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
         mExecutor.shutdown();
         closeCamera();
     }
+
+    /**
+     * Handler thread initialization function
+     * @return HandlerThread
+     */
     private HandlerThread initializeCameraSessionHandlerThread(){
         return new HandlerThread("SessionHandlerThread") {
             @Override
@@ -191,6 +209,11 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
             }
         };
     }
+
+    /**
+     * acquiring camera supported output image sizes
+     * @param cm
+     */
     private void acquireCameraCharacteristics(@NonNull CameraManager cm){
         try {
             mCameraId = cm.getCameraIdList()[0];
@@ -203,6 +226,11 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
             Log.e(TAG, "Unable to access camera", e);
         }
     }
+
+    /**
+     * Image reader creation and processing.
+     * This data will be used to calculate color values
+     */
     private void createImageReader() {
 
         try {
@@ -228,6 +256,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
 
                             byte[] bytes = new byte[buffer.capacity()];
                             buffer.get(bytes);
+                            //Dropping old frame if any
                             mImageDataBlockingArray.clear();
                             mImageDataBlockingArray.put(new ExecutionContent(image.getFormat(), image.getWidth(), image.getHeight(), bytes));
 //                Bitmap bitmap = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
@@ -241,11 +270,17 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
                     }
 
                 }
-            }, null);
+            }, mCameraSessionHandler);
         }catch (CameraAccessException e){
             Log.e(TAG,"Unable to create Image reader ",e);
         }
     }
+
+    /**
+     * Camera connection method
+     * Connects the camera initializes imageReader for analysis
+     * and instantiates SurfaceView for representation
+     */
     private void openCamera() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, REQUEST_PERMISSION);
@@ -253,7 +288,6 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
             return;
         }
         try {
-
             CameraManager cm = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
             acquireCameraCharacteristics(cm);
 
@@ -283,14 +317,24 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
                     }
                 }, null);
             } catch(CameraAccessException e){
-                e.printStackTrace();
+                Log.e(TAG,"Error opening camera",e);
+                showCriticalDialogMessage("Error opening camera");
             }
     }
+
+    /**
+     * Closes camera device
+     */
     private void closeCamera(){
         if(mCameraDevice != null)
             mCameraDevice.close();
 
     }
+
+    /**
+     * Creating camera capture session with attached surface to draw (SurfaceView and ImageReader)
+     * @param surfaces
+     */
     private void createPreviewSession(Surface ... surfaces){
         try {
             mCameraDevice.createCaptureSession(Arrays.asList(surfaces), new CameraCaptureSession.StateCallback() {
@@ -304,27 +348,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
                         builder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
 
 
-                        cameraCaptureSession.setRepeatingRequest(builder.build(), new CameraCaptureSession.CaptureCallback() {
-                            @Override
-                            public void onCaptureStarted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, long timestamp, long frameNumber) {
-                                super.onCaptureStarted(session, request, timestamp, frameNumber);
-                            }
-
-                            @Override
-                            public void onCaptureProgressed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureResult partialResult) {
-                                super.onCaptureProgressed(session, request, partialResult);
-                            }
-
-                            @Override
-                            public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
-                                super.onCaptureCompleted(session, request, result);
-                            }
-
-                            @Override
-                            public void onCaptureFailed(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull CaptureFailure failure) {
-                                super.onCaptureFailed(session, request, failure);
-                            }
-                        }, null);
+                        cameraCaptureSession.setRepeatingRequest(builder.build(), null, null);
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
                     }
@@ -335,10 +359,11 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
                 public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
                     Log.e(TAG,"Unable to create capture session "+ cameraCaptureSession);
                 }
-            },mCameraSessionHandler);
+            },null);
 
         } catch (Exception e) {
            Log.e(TAG,"Unable to access camera device",e);
+           showCriticalDialogMessage("Unable to access camera device");
         }
     }
     @Override
@@ -353,6 +378,10 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
         }
     }
 
+    /**
+     * Presents global critical dialog message
+     * @param message
+     */
     private void showCriticalDialogMessage(String message){
         new AlertDialog.Builder(this)
                 .setTitle("Critical error")
@@ -363,7 +392,10 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
 
     }
 
-
+    /**
+     * Method which represents calculated histogram data
+     * @param histogram
+     */
     private void populateColorBoxes(Histogram histogram){
         Histogram.Color[] colors = histogram.getSortedColors();
         for(int i = 0; i < mColorHolders.length && i < colors.length; i++)

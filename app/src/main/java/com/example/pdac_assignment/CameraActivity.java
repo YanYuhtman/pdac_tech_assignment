@@ -168,7 +168,7 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
 
 
     /**
-     * Represents global critical dialog message
+     * Presents global critical dialog message
      * @param message
      */
     private void showCriticalDialogMessage(String message){
