@@ -191,6 +191,8 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
     @Override
     protected void onStop() {
         super.onStop();
+        if(mSurfaceHolder != null)
+            mSurfaceHolder.removeCallback(this);
         mCameraSessionHandlerThread.quitSafely();
         mExecutor.shutdown();
         closeCamera();
