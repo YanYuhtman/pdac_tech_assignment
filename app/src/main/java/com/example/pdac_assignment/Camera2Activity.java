@@ -53,7 +53,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
     private ColorBoxViewHolder [] mColorHolders = new ColorBoxViewHolder[5];
     final MutableLiveData<Histogram> mExecutionData = new MutableLiveData<>();
 
-    private final int INITIAL_SCALING_BY = 64;
+    private final static int INITIAL_SCALING_BY = 4;
     private ArrayBlockingQueue<ExecutionContent> mImageDataBlockingArray = new ArrayBlockingQueue<ExecutionContent>(1);
     private ExecutorService mExecutor = null;
 
@@ -63,13 +63,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
     //region SurfaceView
     private SurfaceHolder mSurfaceHolder = null;
 
-    private HandlerThread mCameraSessionHandlerThread = new HandlerThread("SessionHandlerThread") {
-        @Override
-        protected void onLooperPrepared() {
-            super.onLooperPrepared();
-            mCameraSessionHandler = new Handler(getLooper());
-        }
-    };
+    private HandlerThread mCameraSessionHandlerThread = null;
     private Handler mCameraSessionHandler = null;
 
     @Override
@@ -120,7 +114,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
 
     private CameraDevice mCameraDevice;
 
-    private final static int MAX_IMAGE_SIZE_BOUNDARY = 1920;
+    private final static int MAX_IMAGE_SIZE_BOUNDARY = 1920/Histogram.DEFAULT_SCALING_FACTOR;
     private ImageReader mImageReader;
 
     @Override
@@ -143,7 +137,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
         }
         mExecutionData.observe(this, this::populateColorBoxes);
 
-        openCamera();
+
 
     }
 
@@ -151,7 +145,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
     protected void onStart() {
         super.onStart();
 
-        mCameraSessionHandlerThread.start();
+        (mCameraSessionHandlerThread = initializeCameraSessionHandlerThread()).start();
 
         mExecutor = Executors.newSingleThreadExecutor();
         mExecutor.execute(new Runnable() {
@@ -165,7 +159,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
                                 new Histogram.ConfigBuilder()
                                         .setScaleBy(scaleBy)
                                         .build());
-                        if(scaleBy > Histogram.DEFAULT_SCALING_FACTOR)
+                        if(scaleBy > 1)
                             scaleBy /=2;
                         mExecutionData.postValue(histogram);
                     }
@@ -176,6 +170,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
                 }
             }
         });
+        openCamera();
     }
 
     @Override
@@ -184,6 +179,15 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
         mCameraSessionHandlerThread.quitSafely();
         mExecutor.shutdown();
         closeCamera();
+    }
+    private HandlerThread initializeCameraSessionHandlerThread(){
+        return new HandlerThread("SessionHandlerThread") {
+            @Override
+            protected void onLooperPrepared() {
+                super.onLooperPrepared();
+                mCameraSessionHandler = new Handler(getLooper());
+            }
+        };
     }
     private void acquireCameraCharacteristics(@NonNull CameraManager cm){
         try {
@@ -227,7 +231,6 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
 //                Bitmap bitmap = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
 
 //                mCheckImage.setImageBitmap(bitmap);
-//                Histogram histogram = Histogram.instantiateHistogram(bytes,0,bytes.length);
                             image.close();
 
                         }

@@ -185,34 +185,6 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        //#region Test image conversion by YuvImage class
-//        int previewFormat = camera.getParameters().getPreviewFormat();
-//        int width = camera.getParameters().getPreviewSize().width;
-//        int height = camera.getParameters().getPreviewSize().height;
-//        long procStart = SystemClock.elapsedRealtime();
-//        bytes = Utils.convertYuvToJpeg(bytes,previewFormat,width,height);
-//        Palette.instantiatePalette(bytes,0,bytes.length,new Palette.Config(64,64))
-//            .getSortedColors();
-//
-//        long procEnd = SystemClock.elapsedRealtime() ;
-//        if(executionTimeAvg == -1)
-//            executionTimeAvg = procEnd - procStart;
-//        else executionTimeAvg = (executionTimeAvg + (procEnd - procStart))/2;
-//        Log.d("[PALETTE]", "Execution avg: " + executionTimeAvg);
-//        BitmapFactory.Options options = new BitmapFactory.Options();
-//        options.inSampleSize = 1;
-//        mChekcImage.setImageBitmap(BitmapFactory.decodeByteArray(bytes,0,bytes.length,options));
-        //#endregion
-
-        //#region Test image conversion by custom conversoin function
-//        if(testPixelsBitmap == null)
-//            testPixelsBitmap = new int[width*height];
-//        if(amountsOfRGBs == null)
-//            amountsOfRGBs = new float[3];
-//
-//        int[] bitmap = Utils.convertYUV420_NV21toARGB8888(bytes,width,height,testPixelsBitmap,amountsOfRGBs);
-//        mChekcImage.setImageBitmap(Bitmap.createBitmap(bitmap,width,height, Bitmap.Config.ARGB_8888));
-        //#endregion
     }
 
 
