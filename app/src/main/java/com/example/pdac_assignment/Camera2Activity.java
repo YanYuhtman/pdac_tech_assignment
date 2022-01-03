@@ -318,7 +318,6 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
                 }, null);
             } catch(CameraAccessException e){
                 Log.e(TAG,"Error opening camera",e);
-                showCriticalDialogMessage("Error opening camera");
             }
     }
 
@@ -350,7 +349,7 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
 
                         cameraCaptureSession.setRepeatingRequest(builder.build(), null, null);
                     } catch (CameraAccessException e) {
-                        e.printStackTrace();
+                        Log.e(TAG, "Camera access problem",e);
                     }
 
                 }
@@ -363,7 +362,6 @@ public class Camera2Activity extends AppCompatActivity implements SurfaceHolder.
 
         } catch (Exception e) {
            Log.e(TAG,"Unable to access camera device",e);
-           showCriticalDialogMessage("Unable to access camera device");
         }
     }
     @Override
