@@ -4,7 +4,7 @@ The project represents five most popular colors of the image from camera input i
 * MVC design pattern
 * Multy-activity architecture
 * User can choose between Camera and Camera2 activities to view usage of old and new camera API accordingly
-* Technologies and framework used: android.hardware.Camera API, android.hardware.camera2 API,Executors, HandlerThread, SurfaceView, Imagereaderm Yuv-Bitmap convertor
+* Technologies and framework used: android.hardware.Camera API, android.hardware.camera2 API,Executors, HandlerThread, SurfaceView, ImageReader, Yuv-Bitmap convertor
 ## About:
 * The application gives user a choice of two actvities Camera and Camera2. Each uses corresponding camera API.
 * There is 5 color boxes places on top or a side of the screen according screen rotation. Each of them represent one of 5 most popular colors of the image in current time.
